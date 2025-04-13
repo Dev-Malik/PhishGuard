@@ -23,10 +23,7 @@ The extension consists of:
 - `manifest.json` – Configuration file for browser extension permissions and scripts.
 - `background.js` – Handles runtime events and supports message passing.
 - `content.js` – Analyzes DOM content of visited pages for phishing indicators.
-- `urlChecker.js` – Evaluates URL structures and subdomains.
-- `formScanner.js` – Scans forms for suspicious action endpoints and field patterns.
 - `popup.html` & `popup.js` – Displays detection results and user-facing info in the extension UI.
-- `styles.css` – Styling for the extension popup UI.
 
 ---
 
