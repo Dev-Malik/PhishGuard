@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "PhishGuard",
+  "version": "1.0",
+  "description": "Detects suspicious phishing pages using basic heuristics.",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_icon": {
+      "16": "icon-safe.png",
+      "48": "icon-safe.png",
+      "128": "icon-safe.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
