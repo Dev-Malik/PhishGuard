@@ -30,8 +30,8 @@ The extension consists of:
 
 ---
 
-## ⚙️ Installation (For Developers)
+## Installation (For Developers)
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/phishguard-extension.git
+   git clone https://github.com/your-username/PhishGuard.git
