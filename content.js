@@ -1,11 +1,4 @@
-/**
- * Attempts to extract the phishing feature score from a meta tag.
- * Place a meta tag on your test pages like:
- * 
- * <meta name="phish-features" content='{"SFH": 1, "popUpWidnow": -1, "SSLfinal_State": 1, "Request_URL": -1, "URL_of_Anchor": -1, "web_traffic": 1, "URL_Length": 1, "age_of_domain": 1, "having_IP_Address": 0}'>
- * 
- * If present, this function parses the JSON and returns the sum of the feature values.
- */
+
 function getPhishingFeatureScore() {
   const metaTag = document.querySelector('meta[name="phish-features"]');
   if (!metaTag) return null;
@@ -52,11 +45,11 @@ function showBanner(message, color) {
   let prediction = 0; // default: safe
 
   if (score !== null) {
-    // Use the feature sum. Adjust threshold if needed.
+    
     prediction = score < 0 ? 1 : 0;
     console.log("PhishGuard feature sum:", score);
   } else {
-    // Fallback logic: check for banned domains in form actions.
+    
     const bannedDomains = ["example-phish.com", "malicious-site.org", "evil.com"];
     const forms = document.getElementsByTagName("form");
     const pageHostname = window.location.hostname.replace(/^www\./, "").toLowerCase();
@@ -77,7 +70,7 @@ function showBanner(message, color) {
     }
   }
   
-  // Display a banner indicating the result.
+
   if (prediction === 1) {
     showBanner("⚠️ Warning: This page may be a phishing attempt!", "red");
     console.warn("PhishGuard: Phishing detected.");
@@ -86,7 +79,7 @@ function showBanner(message, color) {
     console.log("PhishGuard: Page is safe.");
   }
   
-  // Send the phishing status to the background script.
+
   chrome.runtime.sendMessage({
     type: "phishingStatus",
     level: prediction === 1 ? "danger" : "safe",
