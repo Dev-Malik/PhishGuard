@@ -1,17 +1,30 @@
-const bannedDomains = ["example-phish.com", "malicious-site.org", "evil.com"];
-
-function normalizeHostname(hostname) {
-  return hostname.replace(/^www\./, "").toLowerCase();
-}
-
-function getHostnameFromURL(url) {
+/**
+ * Attempts to extract the phishing feature score from a meta tag.
+ * Place a meta tag on your test pages like:
+ * 
+ * <meta name="phish-features" content='{"SFH": 1, "popUpWidnow": -1, "SSLfinal_State": 1, "Request_URL": -1, "URL_of_Anchor": -1, "web_traffic": 1, "URL_Length": 1, "age_of_domain": 1, "having_IP_Address": 0}'>
+ * 
+ * If present, this function parses the JSON and returns the sum of the feature values.
+ */
+function getPhishingFeatureScore() {
+  const metaTag = document.querySelector('meta[name="phish-features"]');
+  if (!metaTag) return null;
   try {
-    return normalizeHostname(new URL(url).hostname);
-  } catch (e) {
+    const features = JSON.parse(metaTag.getAttribute("content"));
+    let sum = 0;
+    for (const key in features) {
+      sum += parseFloat(features[key]);
+    }
+    return sum;
+  } catch (error) {
+    console.error("Error parsing phish-features meta tag", error);
     return null;
   }
 }
 
+/**
+ * Creates a banner at the top of the page to display the phishing status.
+ */
 function showBanner(message, color) {
   const banner = document.createElement("div");
   banner.textContent = message;
@@ -28,37 +41,55 @@ function showBanner(message, color) {
   document.body.prepend(banner);
 }
 
-(function () {
-  const forms = document.getElementsByTagName("form");
-  const heuristicsTriggered = [];
+/**
+ * Main detection logic:
+ * 1. Try to get a feature score from a meta tag.
+ * 2. If found, use a simple threshold: if (score < 0) then classify as phishing.
+ * 3. Otherwise, fall back to the banned-domain check.
+ */
+(function() {
+  const score = getPhishingFeatureScore();
+  let prediction = 0; // default: safe
 
-  const pageHostname = normalizeHostname(window.location.hostname);
-  console.log("🔍 Current Page Hostname:", pageHostname);
-
-  for (let form of forms) {
-    const formAction = form.getAttribute("action");
-
-    if (formAction) {
-      const formActionHostname = getHostnameFromURL(formAction);
-      console.log("📝 Form Action Hostname:", formActionHostname);
-
-      if (
-        formActionHostname &&
-        formActionHostname !== pageHostname &&
-        bannedDomains.includes(formActionHostname)
-      ) {
-        heuristicsTriggered.push(
-          `Form submits to known malicious domain: ${formActionHostname}`
-        );
+  if (score !== null) {
+    // Use the feature sum. Adjust threshold if needed.
+    prediction = score < 0 ? 1 : 0;
+    console.log("PhishGuard feature sum:", score);
+  } else {
+    // Fallback logic: check for banned domains in form actions.
+    const bannedDomains = ["example-phish.com", "malicious-site.org", "evil.com"];
+    const forms = document.getElementsByTagName("form");
+    const pageHostname = window.location.hostname.replace(/^www\./, "").toLowerCase();
+    for (let form of forms) {
+      const formAction = form.getAttribute("action");
+      if (formAction) {
+        try {
+          const urlObj = new URL(formAction);
+          const formHostname = urlObj.hostname.replace(/^www\./, "").toLowerCase();
+          if (formHostname && formHostname !== pageHostname && bannedDomains.includes(formHostname)) {
+            prediction = 1;
+            break;
+          }
+        } catch (e) {
+          // Ignore malformed URLs.
+        }
       }
     }
   }
-
-  if (heuristicsTriggered.length > 0) {
+  
+  // Display a banner indicating the result.
+  if (prediction === 1) {
     showBanner("⚠️ Warning: This page may be a phishing attempt!", "red");
-    console.warn("Phishing Heuristics Triggered:", heuristicsTriggered);
+    console.warn("PhishGuard: Phishing detected.");
   } else {
     showBanner("✅ This page appears safe.", "green");
-    console.log("No phishing indicators found.");
+    console.log("PhishGuard: Page is safe.");
   }
+  
+  // Send the phishing status to the background script.
+  chrome.runtime.sendMessage({
+    type: "phishingStatus",
+    level: prediction === 1 ? "danger" : "safe",
+    url: window.location.href
+  });
 })();
